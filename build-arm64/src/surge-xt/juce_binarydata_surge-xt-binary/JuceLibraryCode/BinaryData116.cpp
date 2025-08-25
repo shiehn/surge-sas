@@ -1,0 +1,24 @@
+/* ==================================== JUCER_BINARY_RESOURCE ====================================
+
+   This is an auto-generated file: Any edits you make may be overwritten!
+
+*/
+
+#include <cstring>
+
+namespace SurgeXTBinary
+{
+
+//================== hover00191.svg ==================
+static const unsigned char temp_binary_data_115[] =
+"<svg width=\"11\" height=\"22\" viewBox=\"0 0 11 22\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n"
+"<rect x=\"2.5\" y=\"2.5\" width=\"6\" height=\"6\" rx=\"1\" fill=\"#F1BB72\"/>\n"
+"<rect x=\"2.5\" y=\"2.5\" width=\"6\" height=\"6\" rx=\"1\" stroke=\"#F1BB72\"/>\n"
+"<path d=\"M2.5 4.74072H5.25C5.25 4.74072 5.54832 3.61809 6.16667 3.50887C6.78501 3.39964 7.14584 4.33564 7.14584 4.33564L8 8.5\" stroke=\"black\"/>\n"
+"<rect x=\"1.5\" y=\"12.5\" width=\"8\" height=\"8\" rx=\"2\" fill=\"#804900\"/>\n"
+"<rect x=\"1.5\" y=\"12.5\" width=\"8\" height=\"8\" rx=\"2\" stroke=\"#804900\"/>\n"
+"<path d=\"M2.5 15.7407H5.25C5.25 15.7407 5.54832 14.6181 6.16667 14.5089C6.78501 14.3996 7.14584 15.3356 7.14584 15.3356L8 19.5\" stroke=\"#FF9300\"/>\n"
+"</svg>\n";
+
+const char* hover00191_svg = (const char*) temp_binary_data_115;
+}

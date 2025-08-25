@@ -1,0 +1,20 @@
+/* ==================================== JUCER_BINARY_RESOURCE ====================================
+
+   This is an auto-generated file: Any edits you make may be overwritten!
+
+*/
+
+#include <cstring>
+
+namespace SurgeXTBinary
+{
+
+//================== hover00190.svg ==================
+static const unsigned char temp_binary_data_114[] =
+"<svg width=\"16\" height=\"24\" viewBox=\"0 0 16 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n"
+"<path d=\"M14 4C14 2.89543 13.1046 2 12 2H2V10H12C13.1046 10 14 9.10457 14 8V4Z\" fill=\"#F1BB72\"/>\n"
+"<path d=\"M7.75003 4C8.9771 4 10.0631 4.55697 10.7472 5.41454L12 4.23525V8H7.99975L9.36069 6.71927C8.99908 5.68702 7.96783 4.94116 6.75011 4.94116C5.2305 4.94116 4 6.10018 4 7.52948C3.99998 5.57998 5.67883 4 7.75003 4Z\" fill=\"black\"/>\n"
+"</svg>\n";
+
+const char* hover00190_svg = (const char*) temp_binary_data_114;
+}

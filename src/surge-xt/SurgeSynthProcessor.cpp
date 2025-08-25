@@ -130,6 +130,16 @@ SurgeSynthProcessor::SurgeSynthProcessor()
     bypassParameter = vb.get();
     parent->addChild(std::move(vb));
 
+    // Add hidden signature parameters (900-903)
+    auto sigGroup = std::make_unique<juce::AudioProcessorParameterGroup>("signature", "Plugin Signature", "|");
+    for (int i = 0; i < 4; ++i)
+    {
+        auto sigParam = std::make_unique<SurgeSignatureParameter>(this, i);
+        signatureParams[i] = sigParam.get();
+        sigGroup->addChild(std::move(sigParam));
+    }
+    parent->addChild(std::move(sigGroup));
+
     addParameterGroup(std::move(parent));
 
     presetOrderToPatchList.clear();
@@ -1427,6 +1437,7 @@ void SurgeSynthProcessor::applyMidi(const juce::MidiMessage &m)
             paramChangeToListeners(nullptr, true, SCT_CC, (float)ch, (float)m.getControllerNumber(),
                                    (float)m.getControllerValue(), "");
     }
+    // SysEx handling removed - using plugin_sig approach
     else if (m.isProgramChange())
     {
         // apparently this is not enough to actually execute SurgeSynthesizer::programChange
@@ -1721,6 +1732,17 @@ void SurgeMacroToJuceParamAdapter::setValue(float f)
         // Do whatever macros do
     }
 }
+
+float SurgeSignatureParameter::getValue() const
+{
+    if (proc && proc->surge)
+    {
+        uint32_t sigPart = proc->surge->getPluginSignaturePart(partIndex);
+        return sigPart / (float)0xFFFFFFFF;
+    }
+    return 0.0f;
+}
+
 //==============================================================================
 // This creates new instances of the plugin..
 juce::AudioProcessor *JUCE_CALLTYPE createPluginFilter() { return new SurgeSynthProcessor(); }

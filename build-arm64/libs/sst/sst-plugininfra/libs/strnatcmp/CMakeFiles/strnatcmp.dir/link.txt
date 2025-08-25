@@ -1,0 +1,2 @@
+"/Library/Developer/CommandLineTools/usr/bin/ar" cr libstrnatcmp.a CMakeFiles/strnatcmp.dir/strnatcmp.cpp.o
+"/Library/Developer/CommandLineTools/usr/bin/ranlib" libstrnatcmp.a

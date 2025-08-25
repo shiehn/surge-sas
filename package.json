@@ -1,0 +1,25 @@
+{
+  "name": "surge-tcp-control",
+  "version": "1.0.0",
+  "description": "CLI tool to control Surge XT via TCP",
+  "main": "surge-control.js",
+  "bin": {
+    "surge-control": "./surge-control.js"
+  },
+  "scripts": {
+    "start": "node surge-control.js",
+    "test": "node surge-control.js ping"
+  },
+  "keywords": [
+    "surge",
+    "synthesizer",
+    "tcp",
+    "control",
+    "cli"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

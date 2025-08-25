@@ -1,0 +1,2 @@
+"/Library/Developer/CommandLineTools/usr/bin/ar" cr libcatch2_v3.a CMakeFiles/catch2_v3.dir/catch2/catch_amalgamated.cpp.o
+"/Library/Developer/CommandLineTools/usr/bin/ranlib" libcatch2_v3.a

@@ -319,7 +319,7 @@ SurgeSynthesizer::~SurgeSynthesizer()
 
     // Stop TCP control
     if (tcpController) {
-        tcpController->stop();
+        tcpController->shutdown();
     }
 
     stopSound();
@@ -4017,6 +4017,17 @@ void SurgeSynthesizer::applyMacroMonophonicModulation(long macroNum, float val)
 
 float SurgeSynthesizer::getParameter01(long index) const
 {
+    // Check for hidden plugin signature parameters (900-903)
+    if (index >= 900 && index <= 903) {
+        if (tcpController) {
+            // Get the 32-bit part of the signature
+            uint32_t sigPart = tcpController->getSignaturePart(index - 900);
+            // Convert to 0-1 range
+            return sigPart / (float)0xFFFFFFFF;
+        }
+        return 0.f;
+    }
+    
     if (index >= 0 && index < storage.getPatch().param_ptr.size())
         return storage.getPatch().param_ptr[index]->get_value_f01();
     return 0.f;
@@ -4024,6 +4035,17 @@ float SurgeSynthesizer::getParameter01(long index) const
 
 void SurgeSynthesizer::getParameterDisplay(long index, char *text) const
 {
+    // Handle hidden plugin signature parameters
+    if (index >= 900 && index <= 903) {
+        if (tcpController) {
+            uint32_t sigPart = tcpController->getSignaturePart(index - 900);
+            snprintf(text, TXT_SIZE, "%08X", sigPart);
+        } else {
+            snprintf(text, TXT_SIZE, "00000000");
+        }
+        return;
+    }
+    
     if ((index >= 0) && (index < storage.getPatch().param_ptr.size()))
     {
         storage.getPatch().param_ptr[index]->get_display(text);
@@ -4058,6 +4080,12 @@ void SurgeSynthesizer::getParameterDisplay(long index, char *text, float x) cons
 
 void SurgeSynthesizer::getParameterName(long index, char *text) const
 {
+    // Handle hidden plugin signature parameters
+    if (index >= 900 && index <= 903) {
+        snprintf(text, TXT_SIZE, "Plugin Sig Part %ld", index - 900);
+        return;
+    }
+    
     if ((index >= 0) && (index < storage.getPatch().param_ptr.size()))
     {
         int scn = storage.getPatch().param_ptr[index]->scene;
@@ -5597,16 +5625,66 @@ void SurgeSynthesizer::reclaimVoiceFor(SurgeVoice *v, char key, char channel, ch
         notifyEndedNote(priorNoteId, priorKey, priorChannel, false);
 }
 
+// SysEx handling removed - using plugin_sig approach instead
+
+uint32_t SurgeSynthesizer::getPluginSignaturePart(int part) const {
+    if (tcpController) {
+        return tcpController->getSignaturePart(part);
+    }
+    return 0;
+}
+
 void SurgeSynthesizer::initializeTCPControl() {
     tcpController = std::make_unique<Surge::TCPControl::TCPController>();
     
     // Hook up preset loading
     tcpController->setPresetLoadCallback([this](const std::string& presetName) -> bool {
+        // Strip category prefix if present (e.g., "Basses/Acid Saw" -> "Acid Saw")
+        std::string presetToFind = presetName;
+        size_t slashPos = presetToFind.find('/');
+        if (slashPos != std::string::npos) {
+            presetToFind = presetToFind.substr(slashPos + 1);
+        }
+        
+        // Log what we're searching for
+        FILE* log = fopen("/tmp/surge-router.log", "a");
+        if (log) {
+            fprintf(log, "[PresetLoad] Received: '%s', searching for: '%s'\n", 
+                    presetName.c_str(), presetToFind.c_str());
+            fprintf(log, "[PresetLoad] Total presets in storage: %zu\n", storage.patch_list.size());
+            fclose(log);
+        }
+        
         // Search through factory and user presets
-        for (const auto& patch : storage.patch_list) {
-            if (patch.name == presetName) {
+        for (int i = 0; i < storage.patch_list.size(); ++i) {
+            // Log first 20 preset names for debugging to see the pattern
+            if (i < 20 && log) {
+                log = fopen("/tmp/surge-router.log", "a");
+                if (log) {
+                    fprintf(log, "[PresetLoad] Preset[%d]: '%s' (category: %d)\n", 
+                            i, storage.patch_list[i].name.c_str(), storage.patch_list[i].category);
+                    fclose(log);
+                }
+            }
+            
+            // Also check for presets containing "Lead" to help find matches
+            if (i < 200 && storage.patch_list[i].name.find("Lead") != std::string::npos) {
+                log = fopen("/tmp/surge-router.log", "a");
+                if (log) {
+                    fprintf(log, "[PresetLoad] Found Lead preset[%d]: '%s'\n", 
+                            i, storage.patch_list[i].name.c_str());
+                    fclose(log);
+                }
+            }
+            
+            if (storage.patch_list[i].name == presetToFind) {
                 // Load the preset
-                patchid_queue = patch.id;
+                log = fopen("/tmp/surge-router.log", "a");
+                if (log) {
+                    fprintf(log, "[PresetLoad] FOUND! Loading preset index %d\n", i);
+                    fclose(log);
+                }
+                patchid_queue = i;
                 processAudioThreadOpsWhenAudioEngineUnavailable(true);
                 return true;
             }
@@ -5614,8 +5692,20 @@ void SurgeSynthesizer::initializeTCPControl() {
         
         // Try direct file path if not found by name
         if (fs::exists(fs::path(presetName))) {
+            log = fopen("/tmp/surge-router.log", "a");
+            if (log) {
+                fprintf(log, "[PresetLoad] Loading from file path: %s\n", presetName.c_str());
+                fclose(log);
+            }
             loadPatchByPath(presetName.c_str(), -1, "");
             return true;
+        }
+        
+        log = fopen("/tmp/surge-router.log", "a");
+        if (log) {
+            fprintf(log, "[PresetLoad] NOT FOUND: '%s' (searched as: '%s')\n", 
+                    presetName.c_str(), presetToFind.c_str());
+            fclose(log);
         }
         
         return false;
@@ -5635,13 +5725,53 @@ void SurgeSynthesizer::initializeTCPControl() {
     tcpController->setPresetListCallback([this]() -> std::vector<std::string> {
         std::vector<std::string> presetNames;
         
+        FILE* log = fopen("/tmp/surge-router.log", "a");
+        if (log) {
+            fprintf(log, "[ListPresets] Sending %zu preset names\n", storage.patch_list.size());
+            fclose(log);
+        }
+        
         for (const auto& patch : storage.patch_list) {
             presetNames.push_back(patch.name);
+            
+            // Log presets containing "Lead" or "Mono"
+            if (patch.name.find("Lead") != std::string::npos || 
+                patch.name.find("Mono") != std::string::npos) {
+                log = fopen("/tmp/surge-router.log", "a");
+                if (log) {
+                    fprintf(log, "[ListPresets] Including: '%s'\n", patch.name.c_str());
+                    fclose(log);
+                }
+            }
         }
         
         return presetNames;
     });
     
-    // Start the TCP listener
-    tcpController->start(7833);
+    // Hook up get parameters callback
+    tcpController->setGetParamsCallback([this]() -> std::string {
+        std::string json = "{\"params\":[";
+        bool first = true;
+        
+        for (int i = 0; i < n_total_params; ++i) {
+            if (i == n_global_params) continue; // Skip scene params for now
+            
+            if (!first) json += ",";
+            first = false;
+            
+            char name[TXT_SIZE];
+            getParameterName(i, name);
+            float value = getParameter01(i);
+            
+            json += "{\"index\":" + std::to_string(i) + 
+                    ",\"value\":" + std::to_string(value) + 
+                    ",\"name\":\"" + std::string(name) + "\"}";
+        }
+        
+        json += "]}";
+        return json;
+    });
+    
+    // Initialize with no specific instance ID (will use generated UUID)
+    tcpController->initialize();
 }

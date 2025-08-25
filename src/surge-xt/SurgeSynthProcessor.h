@@ -218,6 +218,47 @@ struct SurgeMacroToJuceParamAdapter : public SurgeBaseParam
     long macroNum;
 };
 
+// Hidden parameter for plugin signature parts (indices 900-903)
+struct SurgeSignatureParameter : public juce::RangedAudioParameter
+{
+    SurgeSynthProcessor *proc;
+    int partIndex; // 0-3 for the 4 parts of the signature
+    juce::NormalisableRange<float> range;
+    
+    SurgeSignatureParameter(SurgeSynthProcessor *p, int part)
+        : proc(p), partIndex(part), range(0.f, 1.f, 0.00001f),
+          juce::RangedAudioParameter(
+              juce::ParameterID(juce::String("sig_part_") + juce::String(part), 1),
+              juce::String("Plugin Sig Part ") + juce::String(part),
+              juce::AudioProcessorParameterWithIDAttributes())
+    {
+    }
+    
+    float getValue() const override;
+    
+    void setValue(float newValue) override
+    {
+        // Read-only parameter - signature doesn't change
+    }
+    
+    float getDefaultValue() const override { return 0.0f; }
+    
+    float getValueForText(const juce::String &text) const override
+    {
+        // Parse hex string back to float
+        auto hexVal = text.getHexValue32();
+        return hexVal / (float)0xFFFFFFFF;
+    }
+    
+    juce::String getCurrentValueAsText() const override
+    {
+        uint32_t sigPart = static_cast<uint32_t>(getValue() * 0xFFFFFFFF);
+        return juce::String::toHexString(sigPart).toUpperCase();
+    }
+    
+    const juce::NormalisableRange<float> &getNormalisableRange() const override { return range; }
+};
+
 struct SurgeBypassParameter : public juce::RangedAudioParameter
 {
     explicit SurgeBypassParameter()
@@ -457,6 +498,7 @@ class SurgeSynthProcessor : public juce::AudioProcessor,
     std::vector<SurgeMacroToJuceParamAdapter *> macrosById;
 
     SurgeBypassParameter *bypassParameter{nullptr};
+    SurgeSignatureParameter *signatureParams[4]{nullptr, nullptr, nullptr, nullptr};
     juce::AudioProcessorParameter *getBypassParameter() const override;
 
     std::string paramClumpName(int clumpid);

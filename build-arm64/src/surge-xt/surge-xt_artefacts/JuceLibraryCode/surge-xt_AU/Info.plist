@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist>
+  <dict>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Surge XT would like to use your microphone for Audio Input</string>
+    <key>NSBluetoothAlwaysUsageDescription</key>
+    <string>Surge XT would like to use BlueTooth</string>
+    <key>CFBundleExecutable</key>
+    <string>Surge XT</string>
+    <key>CFBundleIconFile</key>
+    <string>Icon.icns</string>
+    <key>CFBundleIdentifier</key>
+    <string>org.surge-synth-team.surge-xt</string>
+    <key>CFBundleName</key>
+    <string>Surge XT</string>
+    <key>CFBundleDisplayName</key>
+    <string>Surge XT</string>
+    <key>CFBundlePackageType</key>
+    <string>BNDL</string>
+    <key>CFBundleSignature</key>
+    <string>????</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.4.0</string>
+    <key>CFBundleVersion</key>
+    <string>1.4.0</string>
+    <key>NSHumanReadableCopyright</key>
+    <string></string>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+    <key>AudioComponents</key>
+    <array>
+      <dict>
+        <key>name</key>
+        <string>Surge Synth Team: Surge XT</string>
+        <key>description</key>
+        <string>Surge XT</string>
+        <key>factoryFunction</key>
+        <string>Surge_XTAUFactory</string>
+        <key>manufacturer</key>
+        <string>VmbA</string>
+        <key>type</key>
+        <string>aumu</string>
+        <key>subtype</key>
+        <string>SgXT</string>
+        <key>version</key>
+        <integer>66560</integer>
+        <key>sandboxSafe</key>
+        <true/>
+      </dict>
+    </array>
+  </dict>
+</plist>

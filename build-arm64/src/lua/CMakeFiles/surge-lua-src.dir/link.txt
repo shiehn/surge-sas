@@ -1,0 +1,2 @@
+"/Library/Developer/CommandLineTools/usr/bin/ar" cr libsurge-lua-src.a "CMakeFiles/surge-lua-src.dir/LuaSources.cpp.o"
+"/Library/Developer/CommandLineTools/usr/bin/ranlib" libsurge-lua-src.a

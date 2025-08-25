@@ -111,6 +111,7 @@ class alignas(16) SurgeSynthesizer
     void channelController(char channel, int cc, int value);
     void programChange(char channel, int value);
     void allNotesOff();
+    // SysEx handling removed - using plugin_sig approach
     void allSoundOff();
     void setSamplerate(float sr);
     void updateHighLowKeys(int scene);
@@ -362,6 +363,9 @@ class alignas(16) SurgeSynthesizer
     bool isModsourceUsed(modsources modsource); // FIXME - this should be const
     bool isModDestUsed(long moddest) const;
     bool isModulatorDistinctPerScene(modsources modsource) const; // Modwheel no; SLFO2 yes. etc...
+    
+    // Get plugin signature part for VST parameter exposure
+    uint32_t getPluginSignaturePart(int part) const;
 
     bool supportsIndexedModulator(int scene, modsources modsource) const;
     int getMaxModulationIndex(int scene, modsources modsource) const;

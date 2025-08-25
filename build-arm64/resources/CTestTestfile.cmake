@@ -1,0 +1,6 @@
+# CMake generated Testfile for 
+# Source directory: /Users/stevehiehn/surge-sas/resources
+# Build directory: /Users/stevehiehn/surge-sas/build-arm64/resources
+# 
+# This file includes the relevant testing commands required for 
+# testing this directory and lists subdirectories to be tested as well.
