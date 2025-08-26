@@ -39,6 +39,11 @@ public:
     // Get plugin signature parts for VST parameter exposure
     uint32_t getSignaturePart(int part) const;
     
+    // PIID management  
+    void setPIID(const std::string& projectGuid, const std::string& trackGuid, const std::string& fxGuid);
+    void setPIIDFromString(const std::string& piidString);
+    std::string getPIID() const { return piid; }
+    
 private:
     // Connection management
     void connectToRouter();
@@ -68,6 +73,9 @@ private:
     std::string pluginSig;
     uint32_t instanceId{0};  // Stable instance counter
     std::string generatePluginSignature();
+    
+    // PIID (Persistent Instance ID) for routing
+    std::string piid;  // Format: project_guid/track_guid/fx_guid
     
     // Reconnection backoff
     int reconnectDelay{500}; // milliseconds

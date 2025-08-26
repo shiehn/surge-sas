@@ -20,20 +20,20 @@ namespace Surge
    const bool Build::IsRelease = 0;
    const bool Build::IsNightly = ! Build::IsRelease;
 
-   const char* Build::BuildNumberStr = "f35e3de3"; // Build number to be sure that each result could identified.
+   const char* Build::BuildNumberStr = "f42be6fd"; // Build number to be sure that each result could identified.
    
-   const char* Build::FullVersionStr = "1.4.feat/tcp-control-api.f35e3de3";
+   const char* Build::FullVersionStr = "1.4.feat/tcp-control-api.f42be6fd";
    const char* Build::BuildHost = "Steves-Mac-mini.local";
    const char* Build::BuildArch = "arm64";
    const char *Build::BuildCompiler = "AppleClang-14.0.3.14030022";
 
    const char* Build::BuildLocation = "local";
 
-   const char* Build::BuildDate = "2025-08-24";
-   const char* Build::BuildTime = "13:47:11";
+   const char* Build::BuildDate = "2025-08-25";
+   const char* Build::BuildTime = "18:50:12";
    const char* Build::BuildYear = "2025";
 
-   const char* Build::GitHash = "f35e3de3";
+   const char* Build::GitHash = "f42be6fd";
    const char* Build::GitBranch = "feat/tcp-control-api";
 
    const char* Build::CMAKE_INSTALL_PREFIX = "/usr/local";

@@ -2003,7 +2003,7 @@ void SurgeGUIEditor::showSettingsMenu(const juce::Point<int> &where,
     settingsMenu.addSeparator();
     
     // Add custom fork identifier
-    settingsMenu.addItem("S&S Fork v2.5.0 (Fixed VST Params)", false, false, [](){});
+    settingsMenu.addItem("S&S Fork v1.31.0 (PIID State)", false, false, [](){});
     
     settingsMenu.addSeparator();
 

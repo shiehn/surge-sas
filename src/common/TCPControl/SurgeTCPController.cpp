@@ -103,13 +103,40 @@ void TCPController::initialize() {
 void TCPController::shutdown() {
     if (!running) return;
     
+    // Log shutdown
+    FILE* log = fopen("/tmp/surge-router.log", "a");
+    if (log) {
+        fprintf(log, "[Instance %u] Shutting down TCP controller\n", instanceId);
+        fclose(log);
+    }
+    
+    // Signal thread to stop
     running = false;
+    
+    // Send disconnect message if connected
+    if (connected && socketFd >= 0) {
+        std::string msg = "{\"type\":\"disconnect\","
+                          "\"plugin_sig\":\"" + pluginSig + "\"}\n";
+        std::lock_guard<std::mutex> sockLock(socketMutex);
+        write(socketFd, msg.c_str(), msg.length());
+    }
+    
+    // Wake up any waiting threads
     queueCV.notify_all();
     
+    // Close the connection
     closeConnection();
     
+    // Wait for worker thread to finish
     if (workerThread.joinable()) {
         workerThread.join();
+    }
+    
+    // Final log
+    log = fopen("/tmp/surge-router.log", "a");
+    if (log) {
+        fprintf(log, "[Instance %u] TCP controller shutdown complete\n", instanceId);
+        fclose(log);
     }
 }
 
@@ -133,6 +160,21 @@ void TCPController::connectionLoop() {
             lastHeartbeat = now;
         }
         
+        // Check for connection timeout (no data received for 30 seconds)
+        static auto lastReceived = std::chrono::steady_clock::now();
+        auto timeSinceReceived = std::chrono::duration_cast<std::chrono::seconds>(now - lastReceived).count();
+        if (timeSinceReceived > 30) {
+            FILE* log = fopen("/tmp/surge-router.log", "a");
+            if (log) {
+                fprintf(log, "[Instance %u] Connection timeout - no data for %lld seconds\n", 
+                        instanceId, (long long)timeSinceReceived);
+                fclose(log);
+            }
+            closeConnection();
+            lastReceived = now;  // Reset to avoid immediate reconnect loop
+            continue;
+        }
+        
         // Read incoming messages
         char buffer[4096];
         fd_set readSet;
@@ -148,6 +190,7 @@ void TCPController::connectionLoop() {
             int bytesRead = read(socketFd, buffer, sizeof(buffer) - 1);
             if (bytesRead > 0) {
                 buffer[bytesRead] = '\0';
+                lastReceived = std::chrono::steady_clock::now();  // Update last received time
                 
                 // Process JSON lines (one JSON object per line)
                 std::stringstream ss(buffer);
@@ -307,7 +350,13 @@ void TCPController::closeConnection() {
     connected = false;
     std::lock_guard<std::mutex> lock(socketMutex);
     if (socketFd >= 0) {
+#ifdef _WIN32
+        closesocket(socketFd);
+#else
+        // Shutdown the socket properly before closing
+        ::shutdown(socketFd, SHUT_RDWR);
         close(socketFd);
+#endif
         socketFd = -1;
     }
 }
@@ -330,16 +379,38 @@ void TCPController::reconnectWithBackoff() {
 void TCPController::sendRegistration() {
     std::string msg = "{\"type\":\"register\","
                       "\"plugin_sig\":\"" + pluginSig + "\","
-                      "\"plugin_version\":\"2.5.0\","
+                      "\"plugin_version\":\"1.31.0\","
                       "\"plugin_type\":\"surge-xt-sas\","  // Unique identifier for this fork
-                      "\"plugin_name\":\"Surge XT [S&S Fork Instance " + std::to_string(instanceId) + "]\","
-                      "\"instance_id\":" + std::to_string(instanceId) + ","
-                      "\"build\":\"vst3\"}\n";
+                      "\"plugin_name\":\"Surge XT [S&S Fork v1.31.0 Instance " + std::to_string(instanceId) + "]\","
+                      "\"instance_id\":" + std::to_string(instanceId) + ",";
+    
+    // Add routing field if PIID is available (parse PIID format: project/track/fx)
+    if (!piid.empty()) {
+        size_t pos1 = piid.find('/');
+        size_t pos2 = piid.find('/', pos1 + 1);
+        
+        if (pos1 != std::string::npos && pos2 != std::string::npos) {
+            std::string projectGuid = piid.substr(0, pos1);
+            std::string trackGuid = piid.substr(pos1 + 1, pos2 - pos1 - 1);
+            std::string fxGuid = piid.substr(pos2 + 1);
+            
+            msg += "\"routing\":{"
+                   "\"project_guid\":\"" + projectGuid + "\","
+                   "\"track_guid\":\"" + trackGuid + "\","
+                   "\"fx_guid\":\"" + fxGuid + "\""
+                   "},";
+        }
+    }
+    
+    msg += "\"build\":\"vst3\"}\n";
     
     // Debug logging
     FILE* log = fopen("/tmp/surge-router.log", "a");
     if (log) {
         fprintf(log, "[Instance %u] Sending registration with plugin_sig: %s\n", instanceId, pluginSig.c_str());
+        if (!piid.empty()) {
+            fprintf(log, "[Instance %u] PIID routing: %s\n", instanceId, piid.c_str());
+        }
         fprintf(log, "[Instance %u] Full message: %s", instanceId, msg.c_str());
         fclose(log);
     }
@@ -365,8 +436,24 @@ void TCPController::sendHeartbeat() {
     
     std::lock_guard<std::mutex> sockLock(socketMutex);
     if (socketFd >= 0) {
-        if (write(socketFd, msg.c_str(), msg.length()) < 0) {
+        ssize_t result = write(socketFd, msg.c_str(), msg.length());
+        if (result < 0) {
             // Write failed, connection is broken
+            FILE* log = fopen("/tmp/surge-router.log", "a");
+            if (log) {
+                fprintf(log, "[Instance %u] Heartbeat write failed: %s (errno=%d)\n", 
+                        instanceId, strerror(errno), errno);
+                fclose(log);
+            }
+            closeConnection();
+        } else if (result != (ssize_t)msg.length()) {
+            // Partial write, also indicates a problem
+            FILE* log = fopen("/tmp/surge-router.log", "a");
+            if (log) {
+                fprintf(log, "[Instance %u] Heartbeat partial write: %zd/%zu bytes\n", 
+                        instanceId, result, msg.length());
+                fclose(log);
+            }
             closeConnection();
         }
     }
@@ -465,6 +552,34 @@ void TCPController::processRouterCommand(const std::string& jsonMsg) {
             sendResponse(requestId, true, data);
         } else {
             sendResponse(requestId, false, "{\"error\":\"Preset list callback not set\"}");
+        }
+    }
+    else if (op == "set_piid") {
+        // Handle PIID assignment from routing system
+        std::regex projectRegex("\"project_guid\"\\s*:\\s*\"([^\"]+)\"");
+        std::regex trackRegex("\"track_guid\"\\s*:\\s*\"([^\"]+)\"");
+        std::regex fxRegex("\"fx_guid\"\\s*:\\s*\"([^\"]+)\"");
+        
+        std::string projectGuid, trackGuid, fxGuid;
+        
+        if (std::regex_search(jsonMsg, match, projectRegex)) {
+            projectGuid = match[1];
+        }
+        if (std::regex_search(jsonMsg, match, trackRegex)) {
+            trackGuid = match[1];
+        }
+        if (std::regex_search(jsonMsg, match, fxRegex)) {
+            fxGuid = match[1];
+        }
+        
+        if (!projectGuid.empty() && !trackGuid.empty() && !fxGuid.empty()) {
+            setPIID(projectGuid, trackGuid, fxGuid);
+            sendResponse(requestId, true, "{\"message\":\"PIID set successfully\"}");
+            
+            // Re-send registration with updated PIID
+            sendRegistration();
+        } else {
+            sendResponse(requestId, false, "{\"error\":\"Invalid PIID data\"}");
         }
     }
     else if (op == "set_param") {
@@ -622,6 +737,44 @@ uint32_t TCPController::getSignaturePart(int part) const {
     }
     
     return 0;
+}
+
+void TCPController::setPIID(const std::string& projectGuid, const std::string& trackGuid, const std::string& fxGuid) {
+    if (!projectGuid.empty() && !trackGuid.empty() && !fxGuid.empty()) {
+        piid = projectGuid + "/" + trackGuid + "/" + fxGuid;
+        
+        // Log PIID update
+        FILE* log = fopen("/tmp/surge-router.log", "a");
+        if (log) {
+            fprintf(log, "[Instance %u] PIID set: %s\n", instanceId, piid.c_str());
+            fclose(log);
+        }
+    }
+}
+
+void TCPController::setPIIDFromString(const std::string& piidString) {
+    if (!piidString.empty()) {
+        // Parse PIID string format: projectGuid/trackGuid/fxGuid
+        size_t pos1 = piidString.find('/');
+        size_t pos2 = piidString.find('/', pos1 + 1);
+        
+        if (pos1 != std::string::npos && pos2 != std::string::npos) {
+            std::string projectGuid = piidString.substr(0, pos1);
+            std::string trackGuid = piidString.substr(pos1 + 1, pos2 - pos1 - 1);
+            std::string fxGuid = piidString.substr(pos2 + 1);
+            
+            setPIID(projectGuid, trackGuid, fxGuid);
+        } else {
+            // If it's not in the expected format, store it directly
+            piid = piidString;
+            
+            FILE* log = fopen("/tmp/surge-router.log", "a");
+            if (log) {
+                fprintf(log, "[Instance %u] PIID set from string: %s\n", instanceId, piid.c_str());
+                fclose(log);
+            }
+        }
+    }
 }
 
 } // namespace TCPControl

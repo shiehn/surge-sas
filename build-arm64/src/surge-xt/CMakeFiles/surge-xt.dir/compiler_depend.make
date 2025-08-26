@@ -4695,6 +4695,7 @@ src/surge-xt/CMakeFiles/surge-xt.dir/SurgeSynthProcessor.cpp.o: ../src/surge-xt/
   ../libs/JUCE/modules/juce_audio_utils/audio_cd/juce_AudioCDReader.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/usr/include/c++/v1/forward_list \
   ../src/common/version.h \
+  ../src/common/TCPControl/SurgeTCPController.h \
   ../libs/sst/sst-plugininfra/include/sst/plugininfra/cpufeatures.h \
   ../src/common/UnitConversions.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/usr/include/c++/v1/any \
@@ -105467,6 +105468,8 @@ libs/luajitlib/LuaJIT/include/lauxlib.h:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/System/Library/Frameworks/vecLib.framework/Headers/clapack.h:
 
+/Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/usr/include/mach/processor_info.h:
+
 ../src/surge-xt/gui/overlays/TuningOverlays.h:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/System/Library/Frameworks/vecLib.framework/Headers/fortran_blas.h:
@@ -107141,6 +107144,8 @@ libs/luajitlib/LuaJIT/include/luaconf.h:
 
 ../libs/JUCE/modules/juce_graphics/geometry/juce_EdgeTable.h:
 
+../src/common/TCPControl/SurgeTCPController.h:
+
 ../libs/sst/sst-basic-blocks/include/sst/basic-blocks/tables/TwoToTheXProvider.h:
 
 ../libs/JUCE/modules/juce_graphics/fonts/harfbuzz/hb-ot-shaper-khmer.cc:
@@ -108776,8 +108781,6 @@ libs/luajitlib/LuaJIT/include/lj_arch.h:
 /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/usr/include/c++/v1/__iterator/insert_iterator.h:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/usr/include/c++/v1/__thread/poll_with_backoff.h:
-
-/Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/usr/include/mach/processor_info.h:
 
 /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/System/Library/Frameworks/Foundation.framework/Headers/NSExpression.h:
 

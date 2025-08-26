@@ -4698,6 +4698,7 @@ src/surge-xt/CMakeFiles/surge-xt.dir/SurgeSynthProcessor.cpp.o
  /Users/stevehiehn/surge-sas/libs/JUCE/modules/juce_audio_utils/audio_cd/juce_AudioCDReader.h
  /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/usr/include/c++/v1/forward_list
  /Users/stevehiehn/surge-sas/src/common/version.h
+ /Users/stevehiehn/surge-sas/src/common/TCPControl/SurgeTCPController.h
  /Users/stevehiehn/surge-sas/libs/sst/sst-plugininfra/include/sst/plugininfra/cpufeatures.h
  /Users/stevehiehn/surge-sas/src/common/UnitConversions.h
  /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/usr/include/c++/v1/any

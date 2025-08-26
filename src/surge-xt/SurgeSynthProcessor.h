@@ -559,6 +559,9 @@ class SurgeSynthProcessor : public juce::AudioProcessor,
   private:
     // Have we warned about bad configurations
     bool warnedAboutBadConfig{false};
+    
+    // PIID for persistent instance routing
+    std::string storedPIID;
 
   public:
     std::unique_ptr<Surge::GUI::UndoManager> undoManager;

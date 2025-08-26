@@ -586,6 +586,9 @@ class alignas(16) SurgeSynthesizer
     void changeModulatorSmoothing(Modulator::SmoothingMode m);
 
     void queueForRefresh(int param_index);
+    
+    // TCP Control accessors
+    Surge::TCPControl::TCPController* getTCPController() { return tcpController.get(); }
 
     // these have to be thread-safe, so keep them private
   private:
