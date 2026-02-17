@@ -1,0 +1,2 @@
+"/Library/Developer/CommandLineTools/usr/bin/ar" cr libsurge-platform.a "CMakeFiles/surge-platform.dir/macos/cpp17-aligned-new.cpp.o"
+"/Library/Developer/CommandLineTools/usr/bin/ranlib" libsurge-platform.a

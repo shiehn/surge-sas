@@ -61,12 +61,12 @@ struct Build
 
 #define SURGE_VST2_IDENTIFIER 'cjs3'
 
-#define stringProductName "Surge XT"
+#define stringProductName "Surge XT [S&S Fork v1.30.0 PIID State]"
 #define stringOrganization "https://github.com/surge-synthesizer/"
 #define stringRepository "https://github.com/surge-synthesizer/surge/"
 #define stringWebsite "https://surge-synthesizer.github.io/"
 #define stringManual "https://surge-synthesizer.github.io/manual-xt/"
-#define stringFileDescription "Surge XT - Hybrid Synthesizer"
+#define stringFileDescription "Surge XT - Hybrid Synthesizer (S&S Router Client v1.30.0 with PIID in VST3 state)"
 #define stringCompanyName "Surge Synth Team\0"
 #define stringLegalCopyright "© 2004-2024 Various Authors"
 #define stringLegalTrademarks "VST is a trademark of Steinberg Media Technologies GmbH"

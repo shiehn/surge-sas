@@ -2001,6 +2001,11 @@ void SurgeGUIEditor::showSettingsMenu(const juce::Point<int> &where,
                          []() { juce::URL(stringWebsite).launchInDefaultBrowser(); });
 
     settingsMenu.addSeparator();
+    
+    // Add custom fork identifier
+    settingsMenu.addItem("S&S Fork v1.31.0 (PIID State)", false, false, [](){});
+    
+    settingsMenu.addSeparator();
 
     Surge::GUI::addMenuWithShortcut(settingsMenu, "About Surge XT", showShortcutDescription("F12"),
                                     [this]() { this->showAboutScreen(); });

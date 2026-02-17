@@ -1,0 +1,5 @@
+if(EXISTS "/Users/stevehiehn/surge-sas/build-arm64/src/surge-testrunner/surge-testrunner_tests-b12d07c.cmake")
+  include("/Users/stevehiehn/surge-sas/build-arm64/src/surge-testrunner/surge-testrunner_tests-b12d07c.cmake")
+else()
+  add_test(surge-testrunner_NOT_BUILT-b12d07c surge-testrunner_NOT_BUILT-b12d07c)
+endif()

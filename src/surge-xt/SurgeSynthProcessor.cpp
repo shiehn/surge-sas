@@ -24,11 +24,14 @@
 #include "SurgeSynthProcessor.h"
 #include "DebugHelpers.h"
 #include "version.h"
+#include "TCPControl/SurgeTCPController.h"
 #include "sst/plugininfra/cpufeatures.h"
 #include "globals.h"
 #include "UserDefaults.h"
 #include "UnitConversions.h"
 #include <any>
+#include <fstream>
+#include <ctime>
 
 #if LINUX
 // getCurrentPosition is deprecated in J7
@@ -65,6 +68,34 @@ SurgeSynthProcessor::SurgeSynthProcessor()
         << "  - Build Info   : " << Surge::Build::BuildDate << " " << Surge::Build::BuildTime
         << " using " << Surge::Build::BuildCompiler << "\n";
 #endif
+
+    // HOST INFO DISCOVERY - Log early host context
+    {
+        std::ostringstream hostInit;
+        hostInit << "\n===== CONSTRUCTOR HOST INFO =====\n";
+        hostInit << "Wrapper: " << wrapperTypeString << "\n";
+        hostInit << "Instance Ptr: " << std::hex << (int64_t)this << std::dec << "\n";
+        
+        // Try to get any early host info
+        hostInit << "Processor Name: " << getName().toStdString() << "\n";
+        
+        // Check if we can get any identifying info from the environment
+        if (auto* envVar = std::getenv("REAPER_TRACK_NAME"))
+        {
+            hostInit << "REAPER_TRACK_NAME env: " << envVar << "\n";
+        }
+        
+        hostInit << "==================================\n";
+        
+        // Write to log file
+        std::ofstream logFile("/tmp/surge-host-discovery.log", std::ios::app);
+        if (logFile.is_open())
+        {
+            logFile << hostInit.str() << std::endl;
+            logFile.close();
+        }
+        std::cout << "[CONSTRUCTOR_HOST_INFO] " << hostInit.str() << std::endl;
+    }
 
     try
     {
@@ -129,6 +160,16 @@ SurgeSynthProcessor::SurgeSynthProcessor()
 
     bypassParameter = vb.get();
     parent->addChild(std::move(vb));
+
+    // Add hidden signature parameters (900-903)
+    auto sigGroup = std::make_unique<juce::AudioProcessorParameterGroup>("signature", "Plugin Signature", "|");
+    for (int i = 0; i < 4; ++i)
+    {
+        auto sigParam = std::make_unique<SurgeSignatureParameter>(this, i);
+        signatureParams[i] = sigParam.get();
+        sigGroup->addChild(std::move(sigParam));
+    }
+    parent->addChild(std::move(sigGroup));
 
     addParameterGroup(std::move(parent));
 
@@ -490,6 +531,32 @@ void SurgeSynthProcessor::prepareToPlay(double sr, int samplesPerBlock)
     surge->setSamplerate(sr);
     oscCheckStartup = true;
 
+    // HOST INFO DISCOVERY - Log host info when prepared to play
+    if (surge)
+    {
+        std::ostringstream prepInfo;
+        prepInfo << "\n===== PREPARE TO PLAY HOST INFO =====\n";
+        prepInfo << "Sample Rate: " << sr << "\n";
+        prepInfo << "Buffer Size: " << samplesPerBlock << "\n";
+        prepInfo << "Wrapper Type: " << wrapperType << "\n";
+        
+        // Try to get bus layout info
+        auto busLayout = getBusesLayout();
+        prepInfo << "Main Output Channels: " << busLayout.getMainOutputChannelSet().size() << "\n";
+        prepInfo << "Main Input Channels: " << busLayout.getMainInputChannelSet().size() << "\n";
+        
+        prepInfo << "=====================================\n";
+        
+        // Write to log file
+        std::ofstream logFile("/tmp/surge-host-discovery.log", std::ios::app);
+        if (logFile.is_open())
+        {
+            logFile << prepInfo.str() << std::endl;
+            logFile.close();
+        }
+        std::cout << "[PREPARE_HOST_INFO] " << prepInfo.str() << std::endl;
+    }
+
     // It used to be we would set audio processing active true here *but* REAPER calls this for
     // inactive muted channels so we didn't load if that was the case. Set it true only
     // if we actually have an audio process going! See #6173
@@ -526,6 +593,121 @@ void SurgeSynthProcessor::processBlock(juce::AudioBuffer<float> &buffer,
     {
         buffer.clear();
         return;
+    }
+
+    // HOST INFO DISCOVERY EXPERIMENT - Log once per session
+    static bool hostInfoLogged = false;
+    if (!hostInfoLogged && surge)
+    {
+        hostInfoLogged = true;
+        std::ostringstream hostInfo;
+        hostInfo << "\n========== HOST INFO DISCOVERY ==========\n";
+        
+        // 1. Basic plugin info
+        hostInfo << "Plugin Name: " << getName().toStdString() << "\n";
+        
+        // 2. Wrapper type
+        hostInfo << "Wrapper Type: ";
+        switch(wrapperType) {
+            case wrapperType_Undefined: hostInfo << "Undefined"; break;
+            case wrapperType_VST: hostInfo << "VST"; break;
+            case wrapperType_VST3: hostInfo << "VST3"; break;
+            case wrapperType_AudioUnit: hostInfo << "AudioUnit"; break;
+            case wrapperType_AudioUnitv3: hostInfo << "AudioUnitv3"; break;
+            case wrapperType_AAX: hostInfo << "AAX"; break;
+            case wrapperType_Standalone: hostInfo << "Standalone"; break;
+            default: hostInfo << "Unknown(" << wrapperType << ")"; break;
+        }
+        hostInfo << "\n";
+        
+        // 3. Host application info (if available)
+        if (auto* editor = getActiveEditor())
+        {
+            hostInfo << "Editor Active: Yes\n";
+            auto bounds = editor->getBounds();
+            hostInfo << "Editor Bounds: " << bounds.getX() << "," << bounds.getY() 
+                    << " " << bounds.getWidth() << "x" << bounds.getHeight() << "\n";
+        }
+        
+        // 4. AudioProcessor properties
+        hostInfo << "Processor Type: " << getName().toStdString() << "\n";
+        
+        // 5. Bus configuration
+        hostInfo << "Input Buses: " << getBusCount(true) << "\n";
+        hostInfo << "Output Buses: " << getBusCount(false) << "\n";
+        
+        // 6. Current program/preset info
+        hostInfo << "Current Program: " << getCurrentProgram() << "\n";
+        hostInfo << "Program Name: " << getProgramName(getCurrentProgram()).toStdString() << "\n";
+        
+        // 7. Playhead info (host transport)
+        if (auto* playhead = getPlayHead())
+        {
+            juce::AudioPlayHead::CurrentPositionInfo pos;
+            if (playhead->getCurrentPosition(pos))
+            {
+                hostInfo << "Host Transport:\n";
+                hostInfo << "  BPM: " << pos.bpm << "\n";
+                hostInfo << "  PPQ Position: " << pos.ppqPosition << "\n";
+                hostInfo << "  Time Sig: " << pos.timeSigNumerator << "/" << pos.timeSigDenominator << "\n";
+                hostInfo << "  Is Playing: " << (pos.isPlaying ? "Yes" : "No") << "\n";
+                hostInfo << "  Is Recording: " << (pos.isRecording ? "Yes" : "No") << "\n";
+                // Frame rate is an enum, just skip it for now
+                hostInfo << "  Edit Origin Time: " << pos.editOriginTime << "\n";
+            }
+        }
+        
+        // 8. VST3 specific info
+        if (wrapperType == wrapperType_VST3)
+        {
+            hostInfo << "VST3 Mode Active\n";
+            // Try to get VST3 context through JUCE
+            // Note: JUCE abstracts most VST3 interfaces
+        }
+        
+        // 9. Parameter info that might contain track data
+        for (int i = 0; i < getNumParameters(); ++i)
+        {
+            if (auto* param = getParameters()[i])
+            {
+                auto paramID = juce::String(param->getName(128));
+                if (paramID.contains("track") || paramID.contains("guid") || 
+                    paramID.contains("id") || i >= 900)
+                {
+                    hostInfo << "Param[" << i << "] " << paramID.toStdString() 
+                            << " = " << param->getValue() << "\n";
+                }
+            }
+        }
+        
+        // 10. Additional processor info
+        hostInfo << "Latency Samples: " << getLatencySamples() << "\n";
+        hostInfo << "Tail Length: " << getTailLengthSeconds() << " seconds\n";
+        
+        // 11. Try to get more identifying info
+        auto processorId = juce::String::toHexString((int64_t)this);
+        hostInfo << "Processor Instance Ptr: " << processorId.toStdString() << "\n";
+        
+        hostInfo << "========================================\n";
+        
+        // Write to a dedicated log file
+        std::ofstream logFile("/tmp/surge-host-discovery.log", std::ios::app);
+        if (logFile.is_open())
+        {
+            logFile << hostInfo.str() << std::endl;
+            logFile.close();
+        }
+        
+        // Also write to console
+        std::cout << "[HOST_INFO_DISCOVERY] " << hostInfo.str() << std::endl;
+        
+        // And to the router log
+        std::ofstream routerLog("/tmp/surge-router.log", std::ios::app);
+        if (routerLog.is_open())
+        {
+            routerLog << hostInfo.str() << std::endl;
+            routerLog.close();
+        }
     }
 
     if (oscCheckStartup)
@@ -1427,6 +1609,7 @@ void SurgeSynthProcessor::applyMidi(const juce::MidiMessage &m)
             paramChangeToListeners(nullptr, true, SCT_CC, (float)ch, (float)m.getControllerNumber(),
                                    (float)m.getControllerValue(), "");
     }
+    // SysEx handling removed - using plugin_sig approach
     else if (m.isProgramChange())
     {
         // apparently this is not enough to actually execute SurgeSynthesizer::programChange
@@ -1462,8 +1645,16 @@ void SurgeSynthProcessor::getStateInformation(juce::MemoryBlock &destData)
 {
     if (!surge)
         return;
+    
+    // Debug: Log to file
+    {
+        std::ofstream logFile("/tmp/surge-debug.log", std::ios::app);
+        logFile << "=== getStateInformation called at " << std::time(nullptr) << " ===" << std::endl;
+        logFile << "Version: v1.31.0 with JSON envelope" << std::endl;
+    }
 
     surge->populateDawExtraState();
+    
     auto sse = dynamic_cast<SurgeSynthEditor *>(getActiveEditor());
     if (sse)
     {
@@ -1472,8 +1663,64 @@ void SurgeSynthProcessor::getStateInformation(juce::MemoryBlock &destData)
 
     void *data = nullptr; // Surge instance owns this on return
     unsigned int stateSize = surge->saveRaw(&data);
-    destData.setSize(stateSize);
-    destData.copyFrom(data, 0, stateSize);
+    
+    // Wrap state in JSON envelope with PIID for live state scanning
+    std::string jsonEnvelope = "{\"sas\":{";
+    
+    // Add PIID if available
+    auto tcpCtrl = surge->getTCPController();
+    if (tcpCtrl && !tcpCtrl->getPIID().empty()) {
+        jsonEnvelope += "\"piid\":\"" + tcpCtrl->getPIID() + "\",";
+    }
+    
+    // Debug: Log PIID status
+    {
+        std::ofstream logFile("/tmp/surge-debug.log", std::ios::app);
+        if (tcpCtrl) {
+            logFile << "TCP Controller exists, PIID: '" << tcpCtrl->getPIID() << "'" << std::endl;
+        } else {
+            logFile << "No TCP Controller!" << std::endl;
+        }
+    }
+    
+    // Add metadata
+    jsonEnvelope += "\"version\":\"1.31.0\",";
+    jsonEnvelope += "\"format\":\"surge_binary\",";
+    jsonEnvelope += "\"size\":" + std::to_string(stateSize) + "},";
+    jsonEnvelope += "\"data\":\"";
+    
+    // Base64 encode the binary data
+    const unsigned char* rawData = static_cast<const unsigned char*>(data);
+    static const char b64chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    std::string base64Data;
+    
+    for (unsigned int i = 0; i < stateSize; i += 3) {
+        unsigned int triple = 0;
+        int remaining = stateSize - i;
+        
+        if (remaining >= 1) triple |= rawData[i] << 16;
+        if (remaining >= 2) triple |= rawData[i + 1] << 8;
+        if (remaining >= 3) triple |= rawData[i + 2];
+        
+        base64Data += b64chars[(triple >> 18) & 0x3F];
+        base64Data += b64chars[(triple >> 12) & 0x3F];
+        base64Data += (remaining > 1) ? b64chars[(triple >> 6) & 0x3F] : '=';
+        base64Data += (remaining > 2) ? b64chars[triple & 0x3F] : '=';
+    }
+    
+    jsonEnvelope += base64Data + "\"}";
+    
+    // Debug: Log JSON envelope creation to file
+    {
+        std::ofstream logFile("/tmp/surge-debug.log", std::ios::app);
+        logFile << "JSON envelope created, size: " << jsonEnvelope.size() << std::endl;
+        logFile << "JSON starts with: " << jsonEnvelope.substr(0, 100) << std::endl;
+        logFile << "PIID in envelope: " << (jsonEnvelope.find("piid") != std::string::npos ? "YES" : "NO") << std::endl;
+    }
+    
+    // Write JSON envelope to destData
+    destData.setSize(jsonEnvelope.size());
+    destData.copyFrom(jsonEnvelope.data(), 0, jsonEnvelope.size());
 }
 
 void SurgeSynthProcessor::setStateInformation(const void *data, int sizeInBytes)
@@ -1481,8 +1728,79 @@ void SurgeSynthProcessor::setStateInformation(const void *data, int sizeInBytes)
     if (!surge)
         return;
 
-    surge->enqueuePatchForLoad(data, sizeInBytes);
-    surge->processAudioThreadOpsWhenAudioEngineUnavailable();
+    const char* charData = static_cast<const char*>(data);
+    
+    // Check if this is JSON envelope format (starts with '{"sas":')
+    if (sizeInBytes > 7 && strncmp(charData, "{\"sas\":", 7) == 0) {
+        // Parse JSON envelope
+        std::string jsonStr(charData, sizeInBytes);
+        
+        // Extract PIID
+        size_t piidPos = jsonStr.find("\"piid\":\"");
+        if (piidPos != std::string::npos) {
+            piidPos += 8; // Skip "piid":"
+            size_t piidEnd = jsonStr.find("\"", piidPos);
+            if (piidEnd != std::string::npos) {
+                std::string piid = jsonStr.substr(piidPos, piidEnd - piidPos);
+                
+                // Set PIID in TCP controller
+                auto tcpCtrl = surge->getTCPController();
+                if (tcpCtrl) {
+                    tcpCtrl->setPIIDFromString(piid);
+                }
+            }
+        }
+        
+        // Extract base64 data
+        size_t dataPos = jsonStr.find("\"data\":\"");
+        if (dataPos != std::string::npos) {
+            dataPos += 8; // Skip "data":"
+            size_t dataEnd = jsonStr.find("\"}", dataPos);
+            if (dataEnd != std::string::npos) {
+                std::string base64Data = jsonStr.substr(dataPos, dataEnd - dataPos);
+                
+                // Base64 decode
+                static const unsigned char b64map[128] = {
+                    255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+                    255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+                    255,255,255,255,255,255,255,255,255,255,255,62, 255,255,255,63,
+                    52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 255,255,255,0,  255,255,
+                    255,0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14,
+                    15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 255,255,255,255,255,
+                    255,26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,
+                    41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 255,255,255,255,255
+                };
+                
+                std::vector<unsigned char> decodedData;
+                unsigned int val = 0, valb = -8;
+                
+                for (unsigned char c : base64Data) {
+                    if (c == '=') break;
+                    if (c >= 128) continue;
+                    unsigned char v = b64map[c];
+                    if (v == 255) continue;
+                    
+                    val = (val << 6) + v;
+                    valb += 6;
+                    if (valb >= 0) {
+                        decodedData.push_back((val >> valb) & 0xFF);
+                        valb -= 8;
+                    }
+                }
+                
+                // Load the decoded binary data
+                if (!decodedData.empty()) {
+                    surge->enqueuePatchForLoad(decodedData.data(), decodedData.size());
+                    surge->processAudioThreadOpsWhenAudioEngineUnavailable();
+                }
+            }
+        }
+    } else {
+        // Legacy binary format - load directly
+        surge->enqueuePatchForLoad(data, sizeInBytes);
+        surge->processAudioThreadOpsWhenAudioEngineUnavailable();
+    }
+    
     if (surge->audio_processing_active)
     {
         oscCheckStartup = true;
@@ -1721,6 +2039,17 @@ void SurgeMacroToJuceParamAdapter::setValue(float f)
         // Do whatever macros do
     }
 }
+
+float SurgeSignatureParameter::getValue() const
+{
+    if (proc && proc->surge)
+    {
+        uint32_t sigPart = proc->surge->getPluginSignaturePart(partIndex);
+        return sigPart / (float)0xFFFFFFFF;
+    }
+    return 0.0f;
+}
+
 //==============================================================================
 // This creates new instances of the plugin..
 juce::AudioProcessor *JUCE_CALLTYPE createPluginFilter() { return new SurgeSynthProcessor(); }

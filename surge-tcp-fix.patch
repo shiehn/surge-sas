@@ -1,0 +1,51 @@
+--- a/src/common/TCPControl/SurgeTCPController.cpp
++++ b/src/common/TCPControl/SurgeTCPController.cpp
+@@ -384,11 +384,28 @@ void TCPController::handleMessage(const std::string& message) {
+     processRouterCommand(message);
+ }
+ 
+ void TCPController::processRouterCommand(const std::string& jsonMsg) {
++    // First check if this is a broker command message with type: 'command'
++    std::regex typeRegex("\"type\"\\s*:\\s*\"command\"");
++    bool isBrokerCommand = std::regex_search(jsonMsg, typeRegex);
++    
++    // Debug logging for command messages
++    if (isBrokerCommand) {
++        FILE* log = fopen("/tmp/surge-router.log", "a");
++        if (log) {
++            fprintf(log, "[Instance %u] Processing broker command: %s\n", instanceId, jsonMsg.c_str());
++            fclose(log);
++        }
++    }
++    
+     // Parse the JSON message
+     std::regex opRegex("\"op\"\\s*:\\s*\"([^\"]+)\"");
+     std::regex requestIdRegex("\"request_id\"\\s*:\\s*\"([^\"]+)\"");
+     std::smatch match;
+     
+     std::string op;
+     std::string requestId;
+@@ -403,8 +420,21 @@ void TCPController::processRouterCommand(const std::string& jsonMsg) {
+     if (op == "set_preset" || op == "load_preset") {
+         std::regex presetRegex("\"preset\"\\s*:\\s*\"([^\"]+)\"");
+         if (std::regex_search(jsonMsg, match, presetRegex)) {
+             std::string presetName = match[1];
++            
++            // Log preset loading attempt
++            FILE* log = fopen("/tmp/surge-router.log", "a");
++            if (log) {
++                fprintf(log, "[Instance %u] Loading preset: %s\n", instanceId, presetName.c_str());
++                fprintf(log, "[Instance %u] Callback set: %s\n", instanceId, presetLoadCb ? "YES" : "NO");
++                fclose(log);
++            }
++            
+             if (presetLoadCb) {
+                 bool success = presetLoadCb(presetName);
++                FILE* log2 = fopen("/tmp/surge-router.log", "a");
++                if (log2) {
++                    fprintf(log2, "[Instance %u] Preset load result: %s\n", instanceId, success ? "SUCCESS" : "FAILED");
++                    fclose(log2);
++                }
+                 sendResponse(requestId, success, success ? "{\"preset\":\"" + presetName + "\"}" : "{\"error\":\"Failed to load preset\"}");
+             } else {
+                 sendResponse(requestId, false, "{\"error\":\"Preset callback not set\"}");

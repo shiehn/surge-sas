@@ -1,0 +1,2 @@
+"/Library/Developer/CommandLineTools/usr/bin/ar" cr liboddsound-mts.a "CMakeFiles/oddsound-mts.dir/MTS-ESP/Client/libMTSClient.cpp.o" "CMakeFiles/oddsound-mts.dir/MTS-ESP/Master/libMTSMaster.cpp.o"
+"/Library/Developer/CommandLineTools/usr/bin/ranlib" liboddsound-mts.a

@@ -1,0 +1,2 @@
+"/Library/Developer/CommandLineTools/usr/bin/ar" cr libclap_juce_extensions.a "CMakeFiles/clap_juce_extensions.dir/src/extensions/clap-juce-extensions.cpp.o"
+"/Library/Developer/CommandLineTools/usr/bin/ranlib" libclap_juce_extensions.a

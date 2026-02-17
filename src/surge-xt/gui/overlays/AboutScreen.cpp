@@ -159,9 +159,10 @@ AboutScreen::~AboutScreen() noexcept = default;
 
 void AboutScreen::populateData()
 {
-    std::string version = std::string("Surge XT ") + Surge::Build::FullVersionStr;
+    std::string version = std::string("Surge XT ") + Surge::Build::FullVersionStr + " [S&S Fork v1.31.0]";
     std::ostringstream oss;
-    oss << Surge::Build::BuildDate << " @ " << Surge::Build::BuildTime << " on '"
+    oss << "Router Client (IPC: /tmp/sas-plugin-router.sock or ~/.sas/router.sock)\n"
+        << Surge::Build::BuildDate << " @ " << Surge::Build::BuildTime << " on '"
         << Surge::Build::BuildHost << "/" << Surge::Build::BuildLocation << "' with '"
         << Surge::Build::BuildCompiler << "' using JUCE " << JUCE_MAJOR_VERSION << "."
         << JUCE_MINOR_VERSION << "." << JUCE_BUILDNUMBER;

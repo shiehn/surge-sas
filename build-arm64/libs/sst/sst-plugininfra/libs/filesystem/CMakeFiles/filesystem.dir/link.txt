@@ -1,0 +1,2 @@
+"/Library/Developer/CommandLineTools/usr/bin/ar" cr libfilesystem.a "CMakeFiles/filesystem.dir/src/ghc-filesystem.cpp.o"
+"/Library/Developer/CommandLineTools/usr/bin/ranlib" libfilesystem.a

@@ -1,0 +1,2 @@
+"/Library/Developer/CommandLineTools/usr/bin/ar" cr libpffft.a CMakeFiles/pffft.dir/pffft.c.o
+"/Library/Developer/CommandLineTools/usr/bin/ranlib" libpffft.a

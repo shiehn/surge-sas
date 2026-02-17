@@ -1,0 +1,121 @@
+Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+Compiler: /Library/Developer/CommandLineTools/usr/bin/cc 
+Build flags: 
+Id flags:  
+
+The output was:
+1
+ld: library not found for -lSystem
+clang: error: linker command failed with exit code 1 (use -v to see invocation)
+
+
+Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" failed.
+Compiler: /Library/Developer/CommandLineTools/usr/bin/c++ 
+Build flags: 
+Id flags:  
+
+The output was:
+1
+ld: library not found for -lc++
+clang: error: linker command failed with exit code 1 (use -v to see invocation)
+
+
+Checking whether the ASM compiler is GNU using "--version" did not match "(GNU assembler)|(GCC)|(Free Software Foundation)":
+Apple clang version 14.0.3 (clang-1403.0.22.14.1)
+Target: arm64-apple-darwin22.6.0
+Thread model: posix
+InstalledDir: /Library/Developer/CommandLineTools/usr/bin
+Compiling the OBJC compiler identification source file "CMakeOBJCCompilerId.m" failed.
+Compiler: /Library/Developer/CommandLineTools/usr/bin/cc 
+Build flags: 
+Id flags:  
+
+The output was:
+1
+ld: library not found for -lSystem
+clang: error: linker command failed with exit code 1 (use -v to see invocation)
+
+
+Compiling the OBJCXX compiler identification source file "CMakeOBJCXXCompilerId.mm" failed.
+Compiler: /Library/Developer/CommandLineTools/usr/bin/c++ 
+Build flags: 
+Id flags:  
+
+The output was:
+1
+ld: library not found for -lc++
+clang: error: linker command failed with exit code 1 (use -v to see invocation)
+
+
+Performing C++ SOURCE FILE Test SST_PLUGININFRA_FILESYSTEM_STD_FS_FOUND failed with the following output:
+Change Dir: /Users/stevehiehn/surge-sas/build-arm64/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make -f Makefile cmTC_ad978/fast && /Library/Developer/CommandLineTools/usr/bin/make  -f CMakeFiles/cmTC_ad978.dir/build.make CMakeFiles/cmTC_ad978.dir/build
+Building CXX object CMakeFiles/cmTC_ad978.dir/src.cxx.o
+/Library/Developer/CommandLineTools/usr/bin/c++ -DSST_PLUGININFRA_FILESYSTEM_STD_FS_FOUND  -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk -mmacosx-version-min=10.13 -fPIE -std=c++17 -MD -MT CMakeFiles/cmTC_ad978.dir/src.cxx.o -MF CMakeFiles/cmTC_ad978.dir/src.cxx.o.d -o CMakeFiles/cmTC_ad978.dir/src.cxx.o -c /Users/stevehiehn/surge-sas/build-arm64/CMakeFiles/CMakeTmp/src.cxx
+/Users/stevehiehn/surge-sas/build-arm64/CMakeFiles/CMakeTmp/src.cxx:5:18: error: 'recursive_directory_iterator' is unavailable: introduced in macOS 10.15
+      return fs::recursive_directory_iterator{fs::path{*argv}}.depth();
+                 ^
+/Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/usr/include/c++/v1/__filesystem/recursive_directory_iterator.h:35:7: note: 'recursive_directory_iterator' has been explicitly marked unavailable here
+class recursive_directory_iterator {
+      ^
+/Users/stevehiehn/surge-sas/build-arm64/CMakeFiles/CMakeTmp/src.cxx:5:51: error: 'path' is unavailable: introduced in macOS 10.15
+      return fs::recursive_directory_iterator{fs::path{*argv}}.depth();
+                                                  ^
+/Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/usr/include/c++/v1/__filesystem/path.h:442:24: note: 'path' has been explicitly marked unavailable here
+class _LIBCPP_TYPE_VIS path {
+                       ^
+/Users/stevehiehn/surge-sas/build-arm64/CMakeFiles/CMakeTmp/src.cxx:5:47: error: 'path<char *, void>' is unavailable: introduced in macOS 10.15
+      return fs::recursive_directory_iterator{fs::path{*argv}}.depth();
+                                              ^
+/Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/usr/include/c++/v1/__filesystem/path.h:482:3: note: 'path<char *, void>' has been explicitly marked unavailable here
+  path(const _Source& __src, format = format::auto_format) {
+  ^
+/Users/stevehiehn/surge-sas/build-arm64/CMakeFiles/CMakeTmp/src.cxx:5:47: error: 'path' is unavailable: introduced in macOS 10.15
+      return fs::recursive_directory_iterator{fs::path{*argv}}.depth();
+                                              ^
+/Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/usr/include/c++/v1/__filesystem/path.h:482:3: note: 'path' has been explicitly marked unavailable here
+  path(const _Source& __src, format = format::auto_format) {
+  ^
+/Users/stevehiehn/surge-sas/build-arm64/CMakeFiles/CMakeTmp/src.cxx:5:47: error: '~path' is unavailable: introduced in macOS 10.15
+      return fs::recursive_directory_iterator{fs::path{*argv}}.depth();
+                                              ^
+/Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/usr/include/c++/v1/__filesystem/path.h:505:3: note: '~path' has been explicitly marked unavailable here
+  ~path() = default;
+  ^
+/Users/stevehiehn/surge-sas/build-arm64/CMakeFiles/CMakeTmp/src.cxx:5:14: error: 'recursive_directory_iterator' is unavailable: introduced in macOS 10.15
+      return fs::recursive_directory_iterator{fs::path{*argv}}.depth();
+             ^
+/Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/usr/include/c++/v1/__filesystem/recursive_directory_iterator.h:49:12: note: 'recursive_directory_iterator' has been explicitly marked unavailable here
+  explicit recursive_directory_iterator(
+           ^
+/Users/stevehiehn/surge-sas/build-arm64/CMakeFiles/CMakeTmp/src.cxx:5:14: error: 'recursive_directory_iterator' is unavailable: introduced in macOS 10.15
+      return fs::recursive_directory_iterator{fs::path{*argv}}.depth();
+             ^
+/Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/usr/include/c++/v1/__filesystem/recursive_directory_iterator.h:49:12: note: 'recursive_directory_iterator' has been explicitly marked unavailable here
+  explicit recursive_directory_iterator(
+           ^
+/Users/stevehiehn/surge-sas/build-arm64/CMakeFiles/CMakeTmp/src.cxx:5:14: error: '~recursive_directory_iterator' is unavailable: introduced in macOS 10.15
+      return fs::recursive_directory_iterator{fs::path{*argv}}.depth();
+             ^
+/Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/usr/include/c++/v1/__filesystem/recursive_directory_iterator.h:79:3: note: '~recursive_directory_iterator' has been explicitly marked unavailable here
+  ~recursive_directory_iterator() = default;
+  ^
+/Users/stevehiehn/surge-sas/build-arm64/CMakeFiles/CMakeTmp/src.cxx:5:64: error: 'depth' is unavailable: introduced in macOS 10.15
+      return fs::recursive_directory_iterator{fs::path{*argv}}.depth();
+                                                               ^
+/Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/usr/include/c++/v1/__filesystem/recursive_directory_iterator.h:102:24: note: 'depth' has been explicitly marked unavailable here
+  _LIBCPP_FUNC_VIS int depth() const;
+                       ^
+9 errors generated.
+make[1]: *** [CMakeFiles/cmTC_ad978.dir/src.cxx.o] Error 1
+make: *** [cmTC_ad978/fast] Error 2
+
+
+Source file was:
+
+    #include <filesystem>
+    namespace fs = std::filesystem;
+    int main(int, char **argv) {
+      return fs::recursive_directory_iterator{fs::path{*argv}}.depth();
+    }
